@@ -8,9 +8,8 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Switch\Http\Response;
 use Switch\Http\Stream;
-use Switch\View\View;
-use Switch\Live\LiveResponse;
 use Switch\Controller\Validation\Validator;
+use RuntimeException;
 
 abstract class Controller
 {
@@ -48,14 +47,19 @@ abstract class Controller
     }
 
     /**
-     * Render a Switch View template.
+     * Render a Switch View template (requires switch/view package).
      *
      * @param string $view View template name (e.g. 'home' or 'users.index')
      * @param array<string, mixed> $data Data passed to template
+     * @throws RuntimeException if switch/view is not installed
      */
     protected function view(string $view, array $data = []): string
     {
-        return View::render($view, $data);
+        if (!class_exists(\Switch\View\View::class)) {
+            throw new RuntimeException("The 'switch/view' package is required to render views. Install it via 'composer require switch/view'.");
+        }
+
+        return \Switch\View\View::render($view, $data);
     }
 
     /**
@@ -87,16 +91,20 @@ abstract class Controller
     }
 
     /**
-     * Seamless client-side SPA redirect using Switch Live.
+     * Seamless client-side SPA redirect using Switch Live (falls back to standard redirect if switch/live not installed).
      */
     protected function liveRedirect(string $url): ResponseInterface
     {
-        LiveResponse::redirect($url);
-        return new Response(200, ['X-Switch-Live' => '1', 'X-Switch-Redirect' => $url], Stream::create(''));
+        if (class_exists(\Switch\Live\LiveResponse::class)) {
+            \Switch\Live\LiveResponse::redirect($url);
+            return new Response(200, ['X-Switch-Live' => '1', 'X-Switch-Redirect' => $url], Stream::create(''));
+        }
+
+        return $this->redirect($url);
     }
 
     /**
-     * Send a client-side Toast Notification via LiveResponse.
+     * Send a client-side Toast Notification via LiveResponse (optional dependency on switch/live).
      *
      * @param string $message Toast content
      * @param string $type Toast type: 'success', 'error', 'warning', 'info'
@@ -104,12 +112,15 @@ abstract class Controller
      */
     protected function toast(string $message, string $type = 'info'): static
     {
-        LiveResponse::toast($message, $type);
+        if (class_exists(\Switch\Live\LiveResponse::class)) {
+            \Switch\Live\LiveResponse::toast($message, $type);
+        }
+
         return $this;
     }
 
     /**
-     * Dispatch a custom client-side JavaScript event via LiveResponse.
+     * Dispatch a custom client-side JavaScript event via LiveResponse (optional dependency on switch/live).
      *
      * @param string $event Event name
      * @param array<string, mixed> $detail Event payload
@@ -117,7 +128,10 @@ abstract class Controller
      */
     protected function emit(string $event, array $detail = []): static
     {
-        LiveResponse::emit($event, $detail);
+        if (class_exists(\Switch\Live\LiveResponse::class)) {
+            \Switch\Live\LiveResponse::emit($event, $detail);
+        }
+
         return $this;
     }
 
@@ -128,7 +142,10 @@ abstract class Controller
      */
     protected function title(string $title): static
     {
-        LiveResponse::title($title);
+        if (class_exists(\Switch\Live\LiveResponse::class)) {
+            \Switch\Live\LiveResponse::title($title);
+        }
+
         return $this;
     }
 
@@ -139,7 +156,10 @@ abstract class Controller
      */
     protected function target(string $selector): static
     {
-        LiveResponse::target($selector);
+        if (class_exists(\Switch\Live\LiveResponse::class)) {
+            \Switch\Live\LiveResponse::target($selector);
+        }
+
         return $this;
     }
 
@@ -150,7 +170,10 @@ abstract class Controller
      */
     protected function preserveScroll(bool $preserve = true): static
     {
-        LiveResponse::preserveScroll($preserve);
+        if (class_exists(\Switch\Live\LiveResponse::class)) {
+            \Switch\Live\LiveResponse::preserveScroll($preserve);
+        }
+
         return $this;
     }
 
@@ -159,7 +182,11 @@ abstract class Controller
      */
     protected function isLive(): bool
     {
-        return LiveResponse::isLiveRequest();
+        if (class_exists(\Switch\Live\LiveResponse::class)) {
+            return \Switch\Live\LiveResponse::isLiveRequest();
+        }
+
+        return isset($_SERVER['HTTP_X_SWITCH_LIVE']) && $_SERVER['HTTP_X_SWITCH_LIVE'] === '1';
     }
 
     /**
