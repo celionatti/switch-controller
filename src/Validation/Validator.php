@@ -533,13 +533,23 @@ class Validator
             }
         }
 
+        if (class_exists(\Switch\Database\DB::class)) {
+            try {
+                return \Switch\Database\DB::getPdo();
+            } catch (\Throwable) {
+                // Continue to next fallback
+            }
+        }
+
         if (class_exists(\Switch\Database\ORM\Model::class) && \Switch\Database\ORM\Model::hasConnection()) {
             return \Switch\Database\ORM\Model::getConnection()->getPdo();
         }
 
         if (class_exists(\Switch\Database\Connection\ConnectionManager::class)) {
             try {
-                return \Switch\Database\Connection\ConnectionManager::getInstance()->connection()->getPdo();
+                if (method_exists(\Switch\Database\Connection\ConnectionManager::class, 'getInstance')) {
+                    return \Switch\Database\Connection\ConnectionManager::getInstance()->connection()->getPdo();
+                }
             } catch (\Throwable) {
                 return null;
             }
