@@ -236,12 +236,30 @@ abstract class Controller
     }
 
     /**
-     * Flash a key / value pair to the session for the next request.
+     * Flash a message to the session, or get the FlashBag instance.
+     *
+     * @param string|null $type ('success', 'error', 'warning', 'info')
+     * @param string|null $message
+     * @param string|null $title
+     * @param array<string, mixed> $options
+     * @return mixed
      */
-    protected function flash(string $key, mixed $value = true): static
+    protected function flash(?string $type = null, ?string $message = null, ?string $title = null, array $options = []): mixed
     {
+        if (function_exists('flash')) {
+            if ($type === null) {
+                return flash();
+            }
+            if ($message === null) {
+                // If single argument given like $this->flash('status', 'Hello') or $this->flash('Hello')
+                return flash('info', $type, $title, $options);
+            }
+            flash($type, $message, $title, $options);
+            return $this;
+        }
+
         if (class_exists(\Switch\Session\Session::class)) {
-            \Switch\Session\Session::flash($key, $value);
+            \Switch\Session\Session::flash($type ?? 'info', $message ?? true);
         }
 
         return $this;
