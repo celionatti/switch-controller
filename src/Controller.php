@@ -211,4 +211,39 @@ abstract class Controller
 
         return Validator::validate($data, $rules, $messages);
     }
+
+    /**
+     * Get or set session data, or retrieve the active SessionStore instance.
+     */
+    protected function session(string|array|null $key = null, mixed $default = null): mixed
+    {
+        if (function_exists('session')) {
+            return session($key, $default);
+        }
+
+        if (class_exists(\Switch\Session\Session::class)) {
+            if ($key === null) {
+                return \Switch\Session\Session::getStore();
+            }
+            if (is_array($key)) {
+                \Switch\Session\Session::put($key);
+                return null;
+            }
+            return \Switch\Session\Session::get($key, $default);
+        }
+
+        throw new \RuntimeException('Session package (switch/session) is not installed.');
+    }
+
+    /**
+     * Flash a key / value pair to the session for the next request.
+     */
+    protected function flash(string $key, mixed $value = true): static
+    {
+        if (class_exists(\Switch\Session\Session::class)) {
+            \Switch\Session\Session::flash($key, $value);
+        }
+
+        return $this;
+    }
 }
