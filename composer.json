@@ -11,7 +11,7 @@
     ],
     "require": {
         "php": ">=8.2",
-        "switch/http-message": "^1.0"
+        "switch/http-message": "^1.0 || *"
     },
     "suggest": {
         "switch/view": "Required for rendering Switch View templates ($this->view()) (^1.0).",
@@ -19,8 +19,8 @@
     },
     "require-dev": {
         "phpunit/phpunit": "^10.0",
-        "switch/view": "^1.0",
-        "switch/live": "^1.0"
+        "switch/view": "^1.0 || *",
+        "switch/live": "^1.0 || *"
     },
     "autoload": {
         "psr-4": {
